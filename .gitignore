@@ -1,6 +1,9 @@
 # This .gitignore file should be placed at the root of your Unity project 
 directory
 
+/Assets/Raynbo Games/Art
+/Assets/Raynbo Games/Aa
+
 
 mono_crash.*
 
@@ -118,3 +121,13 @@ Assets/AirshipPackages/@Easy/Core.meta
 Assets/TypeScriptEditorMetadata.aseditorinfo.meta
 
 Assets/AirshipPackages/@Easy.meta
+
+Assets/AirshipPackages/@Easy/VoxelWorld/*
+
+Assets/AirshipPackages/@Easy/VoxelWorld.meta
+
+Assets/AirshipPackages/@vorlias/NexusNet/*
+
+Assets/AirshipPackages/@vorlias.meta
+
+Assets/AirshipPackages/@vorlias/NexusNet.meta

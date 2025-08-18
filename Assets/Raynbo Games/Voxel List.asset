@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6bb3c020ba07904f93cf9126147e068, type: 3}
+  m_Name: Voxel List
+  m_EditorClassIdentifier: 
+  scope: '@Industrio/Earth'
+  blockDefinitions:
+  - {fileID: 11400000, guid: bb91b86fa488ab64b8e4b0e8bb001699, type: 2}
+  - {fileID: 11400000, guid: 27b6772dcbd51fa40af009d2cecfb0a1, type: 2}
+  - {fileID: 11400000, guid: 50ce5e7f35cc7ea4bbe7670e6b36b26d, type: 2}
+  - {fileID: 11400000, guid: 45ae1896bfb08f94d8cb62cf73e45388, type: 2}
+  - {fileID: 11400000, guid: 4f7c02ed62e79f74a81dfb3c76be264c, type: 2}
+  - {fileID: 11400000, guid: 718856f11b089d8459cee64c63e38fd7, type: 2}
+  - {fileID: 11400000, guid: 4ad2b3b0540ca9d44b3c53351dd90762, type: 2}
+  - {fileID: 11400000, guid: 1d0514f3657d7634594cce160722bec2, type: 2}
+  - {fileID: 11400000, guid: 8d507e07c30eb9041b01ab8b922da30f, type: 2}
+  - {fileID: 11400000, guid: 77a5f9dfcc2bd9f4ca44c58649157671, type: 2}
+  - {fileID: 11400000, guid: d3739299777b85248a151fbe88b35d77, type: 2}
+  - {fileID: 11400000, guid: 25b1db0498cd3814aa8a38e68a67728a, type: 2}

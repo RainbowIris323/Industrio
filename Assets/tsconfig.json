@@ -18,7 +18,10 @@
 		"target": "ESNext",
 		"typeRoots": ["AirshipPackages/@Easy/Core/Shared/Types"],
 		"skipLibCheck": true,
-		"strictPropertyInitialization": false
+		"strictPropertyInitialization": false,
+		"plugins": [{
+			"transform": "rbxts-transform-debug",
+		}]
 	},
 	"airship": {
 		"type": "game",
@@ -26,5 +29,6 @@
 		"runtimePath": "AirshipPackages/@Easy/Core/Shared/Runtime"
 	},
 	"include": ["**/*.ts", "**/*.tsx"],
-	"exclude": ["Typescript~"]
+	"exclude": ["Typescript~"],
+	"forceConsistentCasingInFileNames": true
 }

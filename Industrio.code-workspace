@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "Assets"
+		}
+	],
+	"settings": {
+		"git.ignoreLimitWarning": true,
+		"cSpell.words": [
+			"UGUI"
+		]
+	}
+}

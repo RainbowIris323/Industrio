@@ -34,10 +34,10 @@ TagManager:
   - GameLayer8
   - GameLayer9
   - GameLayer10
-  - GameLayer11
-  - GameLayer12
-  - GameLayer13
-  - GameLayer14
+  - VeiwportObjects
+  - NoSupportObject
+  - SupportObjects
+  - N/A
   m_SortingLayers:
   - name: Default
     uniqueID: 0

@@ -29,5 +29,10 @@
   "eslint.workingDirectories": ["."],
   "eslint.options": {
     "overrideConfigFile": "./Typescript~/eslint.config.ts"
-  }
+  },
+  "cSpell.words": [
+    "Behaviour",
+    "Lerp"
+  ],
+  "git.ignoreLimitWarning": true
 }
