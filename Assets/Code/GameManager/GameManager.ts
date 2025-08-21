@@ -1,4 +1,4 @@
-import PlayerManager from "../PlayerManager/PlayerManager";
+import PlayerManager from "../PlayerManager/PlayerContainer";
 import { Signal } from "@Easy/Core/Shared/Util/Signal";
 import { Game } from "@Easy/Core/Shared/Game";
 import { Airship } from "@Easy/Core/Shared/Airship";

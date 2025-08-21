@@ -1026,8 +1026,6 @@ MonoBehaviour:
   maxStepUpHeight: 0.55
   stepUpRampDistance: 0.75
   detectSlopes: 0
-  slopeForce: 45
-  minSlopeDelta: 0.1
   maxSlopeDelta: 0.3
 --- !u!114 &3239827073778428190
 MonoBehaviour:
@@ -1046,7 +1044,7 @@ MonoBehaviour:
   animationEvents: {fileID: 6059025528528977290}
   minAirborneTime: 0.25
   particleMaxDistance: 25
-  directionalBlendLerpMod: 15
+  speedBlendTransitionSpeed: 4
   skiddingSpeed: 7.5
   idleRectionLength: 15
   animWalkSpeed: 4.4444447

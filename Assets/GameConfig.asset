@@ -18,9 +18,9 @@ MonoBehaviour:
   - {fileID: 102900000, guid: e9a6ca25eb7ad2b438ac4974b2e55410, type: 3}
   packages:
   - id: '@Easy/Core'
-    assetVersion: 292
-    codeVersion: 787
-    publishVersionNumber: 563
+    assetVersion: 295
+    codeVersion: 792
+    publishVersionNumber: 568
     game: 0
     localSource: 0
     disabled: 0
@@ -48,6 +48,15 @@ MonoBehaviour:
     assetVersion: 1
     codeVersion: 10
     publishVersionNumber: 10
+    game: 0
+    localSource: 0
+    disabled: 0
+    defaultPackage: 0
+    forceLatestVersion: 0
+  - id: '@NauticalNomads/EnvDecorator'
+    assetVersion: 1
+    codeVersion: 2
+    publishVersionNumber: 2
     game: 0
     localSource: 0
     disabled: 0

@@ -1,0 +1,391 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4706005027204220865
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2418947389974790112}
+  - component: {fileID: 8975062678807353451}
+  m_Layer: 0
+  m_Name: Audio Config
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2418947389974790112
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4706005027204220865}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8975062678807353451
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4706005027204220865}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa4feffba88dce746a2607f0ec6233b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  guid: d58662de-af4a-4140-b580-b5d064f50561
+  script: {fileID: -7555893034596130815, guid: 7ac9d7f109c1a8d40b02bfef8a157f3c, type: 3}
+  scriptPath: Assets/Code/SoundManager/SoundConfig.lua
+  forceContext: 0
+  metadata:
+    name: SoundConfig
+    singleton: 0
+    decorators:
+    - name: AirshipComponentMenu
+      parameters:
+      - type: string
+        serializedValue: '"Island/Core/Sound Config"'
+    properties:
+    - name: pickaxeStrike
+      type: Array
+      objectType: 
+      items:
+        type: object
+        objectType: AudioClip
+        serializedItems:
+        - 
+        objectRefs:
+        - {fileID: 8300000, guid: 62744399904e83342887f3b24933de2b, type: 3}
+      refPath: 
+      fileRef: 
+      jsDocs:
+        text: []
+        tags: []
+      decorators:
+      - name: Spacing
+        parameters:
+        - type: number
+          serializedValue: 10
+      - name: Header
+        parameters:
+        - type: string
+          serializedValue: '"Player Action"'
+      nullable: 0
+      serializedValue: 
+      serializedObject: {fileID: 0}
+      modified: 1
+    - name: axeStrike
+      type: Array
+      objectType: 
+      items:
+        type: object
+        objectType: AudioClip
+        serializedItems:
+        - 
+        - 
+        objectRefs:
+        - {fileID: 8300000, guid: d33f4555bd099d447845ed3a3182ef2b, type: 3}
+        - {fileID: 8300000, guid: 5a058c7069914f5448e346ad0255db7f, type: 3}
+      refPath: 
+      fileRef: 
+      jsDocs:
+        text: []
+        tags: []
+      decorators: []
+      nullable: 0
+      serializedValue: 
+      serializedObject: {fileID: 0}
+      modified: 1
+    - name: buy
+      type: Array
+      objectType: 
+      items:
+        type: object
+        objectType: AudioClip
+        serializedItems:
+        - 
+        objectRefs:
+        - {fileID: 8300000, guid: 79412c5d30ec845448f83e357bf7c792, type: 3}
+      refPath: 
+      fileRef: 
+      jsDocs:
+        text: []
+        tags: []
+      decorators: []
+      nullable: 0
+      serializedValue: 
+      serializedObject: {fileID: 0}
+      modified: 1
+    - name: place
+      type: Array
+      objectType: 
+      items:
+        type: object
+        objectType: AudioClip
+        serializedItems:
+        - 
+        - 
+        - 
+        - 
+        objectRefs:
+        - {fileID: 8300000, guid: 8097ebb779de6154cbc06873fe438011, type: 3}
+        - {fileID: 8300000, guid: 9d2a57b6a6f70074397087c02e7a7add, type: 3}
+        - {fileID: 8300000, guid: 62a9b4d1799d9394ea7e3f145fd168fc, type: 3}
+        - {fileID: 8300000, guid: 6744d83e1f76aac4186caac8b91e7dc3, type: 3}
+      refPath: 
+      fileRef: 
+      jsDocs:
+        text: []
+        tags: []
+      decorators: []
+      nullable: 0
+      serializedValue: 
+      serializedObject: {fileID: 0}
+      modified: 1
+    - name: warp
+      type: Array
+      objectType: 
+      items:
+        type: object
+        objectType: AudioClip
+        serializedItems:
+        - 
+        objectRefs:
+        - {fileID: 8300000, guid: e021e84c28f2a2c4dac4ee940d0e978e, type: 3}
+      refPath: 
+      fileRef: 
+      jsDocs:
+        text: []
+        tags: []
+      decorators: []
+      nullable: 0
+      serializedValue: 
+      serializedObject: {fileID: 0}
+      modified: 1
+    - name: dropItem
+      type: Array
+      objectType: 
+      items:
+        type: object
+        objectType: AudioClip
+        serializedItems:
+        - 
+        - 
+        objectRefs:
+        - {fileID: 8300000, guid: 9c5a81d5c91dd8647975ca2361105680, type: 3}
+        - {fileID: 8300000, guid: bf3a544d56511de45abb634975fe601d, type: 3}
+      refPath: 
+      fileRef: 
+      jsDocs:
+        text: []
+        tags: []
+      decorators: []
+      nullable: 0
+      serializedValue: 
+      serializedObject: {fileID: 0}
+      modified: 1
+    - name: uiClick
+      type: Array
+      objectType: 
+      items:
+        type: object
+        objectType: AudioClip
+        serializedItems:
+        - 
+        objectRefs:
+        - {fileID: 8300000, guid: 42ebe67a09c0aed4789c22eecd77d774, type: 3}
+      refPath: 
+      fileRef: 
+      jsDocs:
+        text: []
+        tags: []
+      decorators:
+      - name: Spacing
+        parameters:
+        - type: number
+          serializedValue: 10
+      - name: Header
+        parameters:
+        - type: string
+          serializedValue: '"Player UI"'
+      nullable: 0
+      serializedValue: 
+      serializedObject: {fileID: 0}
+      modified: 1
+    - name: uiHoverChanged
+      type: Array
+      objectType: 
+      items:
+        type: object
+        objectType: AudioClip
+        serializedItems:
+        - 
+        objectRefs:
+        - {fileID: 8300000, guid: b59ed07452c1f86449ab43230b2503b5, type: 3}
+      refPath: 
+      fileRef: 
+      jsDocs:
+        text: []
+        tags: []
+      decorators: []
+      nullable: 0
+      serializedValue: 
+      serializedObject: {fileID: 0}
+      modified: 1
+    - name: fireLight
+      type: Array
+      objectType: 
+      items:
+        type: object
+        objectType: AudioClip
+        serializedItems:
+        - 
+        objectRefs:
+        - {fileID: 8300000, guid: 4410c09482685b7448c8e537a4da977a, type: 3}
+      refPath: 
+      fileRef: 
+      jsDocs:
+        text: []
+        tags: []
+      decorators:
+      - name: Spacing
+        parameters:
+        - type: number
+          serializedValue: 10
+      - name: Header
+        parameters:
+        - type: string
+          serializedValue: '"World Object"'
+      nullable: 0
+      serializedValue: 
+      serializedObject: {fileID: 0}
+      modified: 1
+    - name: fireBlast
+      type: Array
+      objectType: 
+      items:
+        type: object
+        objectType: AudioClip
+        serializedItems:
+        - 
+        objectRefs:
+        - {fileID: 8300000, guid: b371cc2e4918e46499313994d56a9143, type: 3}
+      refPath: 
+      fileRef: 
+      jsDocs:
+        text: []
+        tags: []
+      decorators: []
+      nullable: 0
+      serializedValue: 
+      serializedObject: {fileID: 0}
+      modified: 1
+    - name: craftWorkbench
+      type: Array
+      objectType: 
+      items:
+        type: object
+        objectType: AudioClip
+        serializedItems:
+        - 
+        objectRefs:
+        - {fileID: 8300000, guid: 677f585547ff9b9449685438f9c7dfe5, type: 3}
+      refPath: 
+      fileRef: 
+      jsDocs:
+        text: []
+        tags: []
+      decorators: []
+      nullable: 0
+      serializedValue: 
+      serializedObject: {fileID: 0}
+      modified: 1
+    - name: craftAnvil
+      type: Array
+      objectType: 
+      items:
+        type: object
+        objectType: AudioClip
+        serializedItems:
+        - 
+        objectRefs:
+        - {fileID: 8300000, guid: 412f65d1c0eac014c99c5030401f36eb, type: 3}
+      refPath: 
+      fileRef: 
+      jsDocs:
+        text: []
+        tags: []
+      decorators: []
+      nullable: 0
+      serializedValue: 
+      serializedObject: {fileID: 0}
+      modified: 1
+    - name: playerWorldAmbient
+      type: Array
+      objectType: 
+      items:
+        type: object
+        objectType: AudioClip
+        serializedItems:
+        - 
+        objectRefs:
+        - {fileID: 8300000, guid: 9ebd2cb0729284646aa21a0dee824fc3, type: 3}
+      refPath: 
+      fileRef: 
+      jsDocs:
+        text: []
+        tags: []
+      decorators:
+      - name: Spacing
+        parameters:
+        - type: number
+          serializedValue: 10
+      - name: Header
+        parameters:
+        - type: string
+          serializedValue: '"Ambient"'
+      nullable: 0
+      serializedValue: 
+      serializedObject: {fileID: 0}
+      modified: 1
+    - name: error
+      type: Array
+      objectType: 
+      items:
+        type: object
+        objectType: AudioClip
+        serializedItems:
+        - 
+        objectRefs:
+        - {fileID: 8300000, guid: 30f494a1c5d9db24590f6d25a38994fd, type: 3}
+      refPath: 
+      fileRef: 
+      jsDocs:
+        text: []
+        tags: []
+      decorators:
+      - name: Spacing
+        parameters:
+        - type: number
+          serializedValue: 10
+      - name: Header
+        parameters:
+        - type: string
+          serializedValue: '"Generic"'
+      nullable: 0
+      serializedValue: 
+      serializedObject: {fileID: 0}
+      modified: 1
+    displayIcon: {fileID: 0}
+    displayName: 

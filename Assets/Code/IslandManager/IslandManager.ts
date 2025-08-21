@@ -1,14 +1,16 @@
 import GameManager from "Code/GameManager/GameManager";
 import {Airship, Platform} from "@Easy/Core/Shared/Airship";
 import {Player} from "@Easy/Core/Shared/Player/Player";
-import PlayerManager from "Code/PlayerManager/PlayerManager";
+import PlayerManager from "Code/PlayerManager/PlayerContainer";
 import {World} from "./World/World";
 import {Game} from "@Easy/Core/Shared/Game";
 import {AirshipServerAccessMode} from "@Easy/Core/Shared/Airship/Types/AirshipServerManager";
 import {SignalPriority} from "@Easy/Core/Shared/Util/Signal";
-import {LoadDefaultIsland} from "./LoadDefaultIsland";
+import {DefaultWorldSave} from "./DefaultWorldSave";
 import ItemManager from "Code/ItemManager/ItemManager";
 import {IslandSave, IslandSaveData} from "./WorldSave";
+import { Enum } from "Code/Enum";
+import { keys } from "@Easy/Core/Shared/Util/ObjectUtils";
 
 export default class IslandManager extends AirshipSingleton {
     public save: IslandSaveData;
@@ -49,10 +51,9 @@ export default class IslandManager extends AirshipSingleton {
                 this.visitors.push(player);
             }
             this.SpawnPlayer(player);
-
+            PlayerManager.Get().FinishPlayerLoad(player);
             return;
         };
-        Game.BroadcastMessage(`Island Owner: ${player.username} | Active ProfileID: ${PlayerManager.Get().GetPlayerData(player).save.activeProfileId}`);
 
         task.wait(1);
 
@@ -63,34 +64,34 @@ export default class IslandManager extends AirshipSingleton {
         });
 
         if (!save) return player.Kick("Unable to load island!");
-        Game.BroadcastMessage(`Loaded Save: ${save.blocks}`);
         this.save = save
 
         // Load World
         if (save.blocks === "") {
-            LoadDefaultIsland(this.world.server);
+            this.world.server.LoadWorldFromSave(DefaultWorldSave.blocks, DefaultWorldSave.key);
+
+            ItemManager.Get().GivePlayerItem(player, ItemManager.Get().GetItem("wood-pickaxe"), 1);
+            ItemManager.Get().GivePlayerItem(player, ItemManager.Get().GetItem("wood-axe"), 1);
+
+            PlayerManager.Get().NotifyPlayer(player, "Welcome to Industrio!", 10);
         } else {
             this.world.server.LoadWorldFromSave(save.blocks, save.blockKey);
+            PlayerManager.Get().NotifyPlayer(player, "Welcome back to Industrio!", 10);
         }
         
         this.owner = player;
         this.users.push(player);
         this.SpawnPlayer(this.owner);
 
-        ItemManager.Get().GivePlayerItem(player, "wood-pickaxe", 1);
-        ItemManager.Get().GivePlayerItem(player, "campfire", 100);
-        ItemManager.Get().GivePlayerItem(player, "wood", 1000);
-        ItemManager.Get().GivePlayerItem(player, "grass", 1000);
-        ItemManager.Get().GivePlayerItem(player, "stone", 1000);
-        ItemManager.Get().GivePlayerItem(player, "wood-plank", 1000);
+        PlayerManager.Get().FinishPlayerLoad(player);
     }
 
     public OnPlayerLeaveServer(player: Player): void {
         if (player.userId !== this.owner.userId) return;
         const save = this.world.server.GenerateWorldSave();
         this.save.blocks = save.blocks;
-        this.save.blockSaves = save.blockSaves;
         this.save.blockKey = save.key;
+        this.save.blockSaves = save.blockSaves;
         IslandSave.Set(PlayerManager.Get().GetPlayerData(player).save.activeProfileId, this.save);
         Platform.Server.ServerManager.ShutdownServer();
     }
@@ -101,12 +102,22 @@ export default class IslandManager extends AirshipSingleton {
      * @param player The player to send to spawn.
      */
     public SpawnPlayer(player: Player): void {
-        player.character?.Teleport(this.world.server.GetSpawnLocation())
+        player.character?.Teleport(this.world.server.GetSpawnLocation());
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public OnTickServer(dt: number): void {
         this.CheckPlayersForVoid();
+        ItemManager.Get().GetItemsInGroup(Enum.ItemComponentGroup.WorldObject).forEach((item) => {
+            const component = ItemManager.Get().GetItemComponentGroup(item, Enum.ItemComponentGroup.WorldObject);
+            if (!component.UseData || !component.DoTick) return;
+            keys(component.data).forEach((key) => {
+                if (!component.data[key]) return;
+                const obj = this.world.bin.GetObjects()[key];
+                if (!obj) return;
+                component.OnTick(obj);
+            })
+        })
     }
     
     public CheckPlayerAuthorization(player: Player): boolean {
@@ -122,7 +133,6 @@ export default class IslandManager extends AirshipSingleton {
         Airship.Players.GetPlayers().forEach((player) => {
             if (player.character!.movement.GetPosition().y < GameManager.Get().config.maxIslandSize.div(-2).y) {
                 this.SpawnPlayer(player);
-                Game.BroadcastMessage(`Sent ${player.username} to spawn`);
             }
         });
     }

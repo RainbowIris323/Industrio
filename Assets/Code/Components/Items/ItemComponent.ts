@@ -1,5 +1,6 @@
 import { Enum } from "Code/Enum";
 import WorldObjectComponent from "./WorldObject/WorldObject";
+import { BottomSupport, ObjectSideBasedEvents } from "./ObjectSideBasedEvents";
 
 export default abstract class ItemComponent extends AirshipBehaviour {
 
@@ -38,6 +39,9 @@ export default abstract class ItemComponent extends AirshipBehaviour {
         if (this.itemGroup === Enum.ItemComponentGroup.WorldObject) {
             const worldObject = this as unknown as WorldObjectComponent;
             this.itemModel = worldObject.worldObject;
+
+            if (!(worldObject.name in ObjectSideBasedEvents)) ObjectSideBasedEvents[worldObject.name] = [];
+            if (worldObject.requireSupport.includes(Enum.Normal.Bottom)) ObjectSideBasedEvents[worldObject.name].push(BottomSupport);
         }
 
         ItemComponent.components.push(this);

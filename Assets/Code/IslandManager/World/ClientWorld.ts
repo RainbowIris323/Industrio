@@ -3,33 +3,26 @@ import { Airship } from "@Easy/Core/Shared/Airship";
 import { World } from "./World";
 import GameManager from "Code/GameManager/GameManager";
 import { Player } from "@Easy/Core/Shared/Player/Player";
-import PlayerManager from "Code/PlayerManager/PlayerManager";
+import PlayerManager from "Code/PlayerManager/PlayerContainer";
 import Ghost from "./Ghost";
 import BlockComponent from "Code/Components/Items/WorldObject/WorldObject";
 import { Placement } from "./Placement";
 import { Enum } from "Code/Enum";
 import PlayerGUI from "Code/PlayerGUI/PlayerGUI";
+import SoundManager from "Code/SoundManager/SoundManager";
+import { BlockDamageCategory } from "Code/Components/Items/Tools/MiningToolComponent";
+import { Game } from "@Easy/Core/Shared/Game";
 
 export class ClientWorld {
     public size: Vector3 = new Vector3(300, 150, 300);
-    public voxel: VoxelWorld;
     private shared: World;
     public ghost: Ghost;
 
-    private models: { [posId: string]: GameObject | undefined } = {}
+    public models: { [posId: string]: GameObject | undefined } = {}
 
     public constructor(world: World) {
         this.ghost = new Ghost();
         this.shared = world;
-        this.voxel = GameManager.Get().config.gameObject.AddComponent<VoxelWorld>();
-        this.voxel.voxelBlocks = GameManager.Get().config.blockList;
-        GameManager.Get().config.blockDefinitionWorld.blockIdToScopeName.forEach((def) => {
-            if (def.id === 0) return;
-            const name = def.name.split(":")[1]
-            this.shared.blocks[name] = def.id;
-        })
-
-        this.voxel.ReloadTextureAtlas();
         
         this.shared.events.Get("PlayerBrokeBlock").Client.Connect((player, position) => this.OnPlayerBrokeBlock(player, position));
         this.shared.events.Get("ServerBrokeBlock").Client.Connect((position) => this.OnServerBrokeBlock(position));
@@ -37,12 +30,14 @@ export class ClientWorld {
         this.shared.events.Get("PlayerPlacedBlock").Client.Connect((player, netData) => this.OnPlayerPlacedBlock(player, Placement.Data.receiveNet(netData)));
         this.shared.events.Get("ServerPlacedBlock").Client.Connect((netData) => this.OnServerPlacedBlock(Placement.Data.receiveNet(netData)));
 
-        this.shared.events.Get("PlayerHitBlock").Client.Connect((player, position, damage, remainingHealth) => this.OnPlayerHitBlock(player, position, damage, remainingHealth));
+        this.shared.events.Get("PlayerHitBlock").Client.Connect((player, position, damage, remainingHealth, tool) => this.OnPlayerHitBlock(player, position, damage, remainingHealth, tool));
     }
 
-    public OnPlayerHitBlock(player: Player, position: Vector3, damage: number, remainingHealth: number) {
+    public OnPlayerHitBlock(player: Player, position: Vector3, damage: number, remainingHealth: number, tool: BlockDamageCategory) {
         const data = this.shared.bin.GetObjectByCollisionAt(position);
         if (!data) return;
+        if (tool === BlockDamageCategory.Axe) SoundManager.Get().PlaySound(this.models[data.positionId]!, SoundManager.Get().sounds.axeStrike, Enum.Sound.Interaction, 0.2);
+        if (tool === BlockDamageCategory.Pickaxe) SoundManager.Get().PlaySound(this.models[data.positionId]!, SoundManager.Get().sounds.pickaxeStrike, Enum.Sound.Interaction, 0.2);
         if (remainingHealth <= 0) {
             data.worldObject.healthData[data.positionId] = undefined;
         } else {
@@ -54,8 +49,9 @@ export class ClientWorld {
     
     public OnPlayerPlacedBlock(player: Player, data?: Placement.Data) {
         if (!data) return;
-        print(data.positionId);
         this.SetBlock(data);
+        this.shared.CheckSides(data, player, true);
+        SoundManager.Get().PlaySound(this.models[data.positionId]!, SoundManager.Get().sounds.place, Enum.Sound.Interaction, 0.5);
     }
 
     public OnServerPlacedBlock(data?: Placement.Data) {
@@ -73,7 +69,11 @@ export class ClientWorld {
     }
 
     public OnPlayerBrokeBlock(player: Player, position: Vector3): void {
+        const block = this.shared.bin.GetObjectByCollisionAt(position);
+        if (!block) return;
         this.DeleteBlock(position);
+        this.shared.CheckSides(block, player, false);
+        if (player === Game.localPlayer) PlayerGUI.Get().onWorldMenuUpdateNeeded.Fire();
     }
 
     public OnServerBrokeBlock(position: Vector3): void {

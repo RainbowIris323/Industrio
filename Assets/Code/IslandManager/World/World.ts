@@ -5,6 +5,9 @@ import Nexus, { NexusTypes } from "@Vorlias/NexusNet/Framework";
 import { Player } from "@Easy/Core/Shared/Player/Player";
 import { SetTimeout } from "@Easy/Core/Shared/Util/Timer";
 import { Placement } from "./Placement";
+import { Enum } from "Code/Enum";
+import { ObjectSideBasedEvents } from "Code/Components/Items/ObjectSideBasedEvents";
+import { Game } from "@Easy/Core/Shared/Game";
 
 export class World {
     public server: ServerWorld;
@@ -16,7 +19,7 @@ export class World {
         Nexus.BuildObjectModel()
         .AddClient("PlayerTryPlaceBlock", Nexus.Event(Placement.netData))
         .AddClient("PlayerTryHitBlock", Nexus.Event(NexusTypes.Vector3))
-        .AddServer("PlayerHitBlock", Nexus.Event(NexusTypes.Player, NexusTypes.Vector3, NexusTypes.Number, NexusTypes.Number))
+        .AddServer("PlayerHitBlock", Nexus.Event(NexusTypes.Player, NexusTypes.Vector3, NexusTypes.Number, NexusTypes.Number, NexusTypes.Number))
         .AddServer("PlayerBrokeBlock", Nexus.Event(NexusTypes.Player, NexusTypes.Vector3))
         .AddServer("ServerBrokeBlock", Nexus.Event(NexusTypes.Vector3))
         .AddServer("PlayerPlacedBlock", Nexus.Event(NexusTypes.Player, Placement.netData))
@@ -52,10 +55,12 @@ export class World {
         for (let x = startPos.x; x < endPos.x; x++) {
             for (let y = startPos.y; y < endPos.y; y++) {
                 for (let z = startPos.z; z < endPos.z; z++) {
+                    print(x, y, z)
                     const pos = new Vector3(x, y, z);
                     const object = this.bin.GetObjectByBaseAt(pos);
                     if (object) func(object);
                 }
+                WaitFrame();
             }
             WaitFrame();
         }
@@ -74,5 +79,26 @@ export class World {
         this.timeouts[key][player.userId] = true;
         SetTimeout(duration, () => this.timeouts[key][player.userId] = false);
         return true;
+    }
+
+    private CheckSide(data: Placement.Data, side: Enum.Normal, player: Player, placed: boolean) {
+        const obj = this.bin.GetObjectByCollisionAt(data.position.add(Enum.NormalToVector3(side).mul(-1)));
+        if (!obj) return;
+        const event = ObjectSideBasedEvents[obj.worldObject.name].find(event => event.side === side);
+        if (!event) return;
+        if (event.env === "Client" && Game.IsClient()) {
+            event.event({ player: player, thisModel: this.client.models[obj.positionId], thisPlacementData: obj, newPlacementData: data, placed: placed });
+            return;
+        }
+        if (event.env === "Server" && Game.IsServer()) {
+            event.event({ player: player, thisPlacementData: obj, newPlacementData: data, placed: placed });
+            return;
+        }
+    }
+
+    public CheckSides(data: Placement.Data, player: Player, placed: boolean): void {
+        for (let i = 0; i < 6; i++) {
+            this.CheckSide(data, i + 1, player, placed);
+        }
     }
 }

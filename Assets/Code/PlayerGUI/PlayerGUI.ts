@@ -1,5 +1,5 @@
 import PlayerGUIComponent from "./PlayerGUIComponent";
-import PlayerManager from "Code/PlayerManager/PlayerManager";
+import PlayerManager from "Code/PlayerManager/PlayerContainer";
 import { Airship } from "@Easy/Core/Shared/Airship";
 import { Placement } from "Code/IslandManager/World/Placement";
 import { Enum } from "Code/Enum";
@@ -10,6 +10,7 @@ import CraftingRecipeComponent from "Code/Components/Systems/CraftingRecipeCompo
 import { CanvasAPI } from "@Easy/Core/Shared/Util/CanvasAPI";
 import ItemManager from "Code/ItemManager/ItemManager";
 import { Game } from "@Easy/Core/Shared/Game";
+import { SetTimeout } from "@Easy/Core/Shared/Util/Timer";
 
 export default class PlayerGUI extends AirshipSingleton {
     public onWorldMenuUpdateNeeded = new Signal();
@@ -25,6 +26,7 @@ export default class PlayerGUI extends AirshipSingleton {
     private config: PlayerGUIComponent;
     private root: Transform;
     private menus: {
+        loadingScreen: GameObject,
         world: {
             root: Transform,
             crosshair: Image,
@@ -38,6 +40,29 @@ export default class PlayerGUI extends AirshipSingleton {
             interactionInfo: {
                 root: Transform,
                 text: TextMeshProUGUI,
+            }
+        };
+        primary: {
+            root: Transform,
+            notificationBin: Transform,
+            menuButtons: {
+                friends: GameObject,
+                report: GameObject,
+            },
+            screens: {
+                root: Transform,
+                explore: {
+                    root: Transform,
+                    add: Button,
+                    usernameInput: TMP_InputField,
+                    playerList: Transform,
+                },
+                report: {
+                    root: Transform,
+                    submit: Button,
+                    titleInput: TMP_InputField,
+                    detailsInput: TMP_InputField,
+                }
             }
         };
         object: {
@@ -77,6 +102,7 @@ export default class PlayerGUI extends AirshipSingleton {
         this.config = gui;
         this.root = gui.gameObject.transform;
         this.menus = {
+            loadingScreen: this.root.FindChild("LoadingScreen").gameObject,
             world: {
                 root: this.root.FindChild("World"),
                 crosshair: this.root.FindChild("World").FindChild("Crosshair").GetComponent<Image>(),
@@ -92,7 +118,29 @@ export default class PlayerGUI extends AirshipSingleton {
                     text: this.root.FindChild("World").FindChild("InteractionInfo").FindChild("Text").GetComponent<TextMeshProUGUI>(),
                 }
             },
-
+            primary: {
+                root: this.root.FindChild("Primary"),
+                notificationBin: this.root.FindChild("Primary").FindChild("Notifications").FindChild("Viewport").FindChild("Content"),
+                menuButtons: {
+                    friends: this.root.FindChild("Primary").FindChild("MenuButtons").FindChild("Friends").gameObject,
+                    report: this.root.FindChild("Primary").FindChild("MenuButtons").FindChild("Report").gameObject,
+                },
+                screens: {
+                    root: this.root.FindChild("Primary").FindChild("Menu"),
+                    explore: {
+                        root: this.root.FindChild("Primary").FindChild("Menu").FindChild("Content").FindChild("Explore"),
+                        add: this.root.FindChild("Primary").FindChild("Menu").FindChild("Content").FindChild("Explore").FindChild("SearchPlayer").FindChild("Add").GetComponent<Button>(),
+                        usernameInput: this.root.FindChild("Primary").FindChild("Menu").FindChild("Content").FindChild("Explore").FindChild("SearchPlayer").FindChild("NameInput").GetComponent<TMP_InputField>(),
+                        playerList: this.root.FindChild("Primary").FindChild("Menu").FindChild("Content").FindChild("Explore").FindChild("Players").FindChild("Viewport").FindChild("Content"),
+                    },
+                    report: {
+                        root: this.root.FindChild("Primary").FindChild("Menu").FindChild("Content").FindChild("Report"),
+                        submit: this.root.FindChild("Primary").FindChild("Menu").FindChild("Content").FindChild("Report").FindChild("TitleBar").FindChild("Submit").GetComponent<Button>(),
+                        titleInput: this.root.FindChild("Primary").FindChild("Menu").FindChild("Content").FindChild("Report").FindChild("TitleBar").FindChild("NameInput").GetComponent<TMP_InputField>(),
+                        detailsInput: this.root.FindChild("Primary").FindChild("Menu").FindChild("Content").FindChild("Report").FindChild("Details").FindChild("TextArea").GetComponent<TMP_InputField>(),
+                    }
+                },
+            },
             object: {
                 root: this.root.FindChild("Object"),
                 objectName: this.root.FindChild("Object").FindChild("Menu").FindChild("ObjectName").FindChild("Text").GetComponent<TextMeshProUGUI>(),
@@ -125,8 +173,27 @@ export default class PlayerGUI extends AirshipSingleton {
                 }
             }
         }
+        this.menus.loadingScreen.SetActive(true);
+        PlayerManager.Get().signal.client.OnServerEvent((msg, timeToLive) => this.Notify(msg, timeToLive));
+    }
 
+    public Notify(msg: string, timeToLive: number): void {
+        const notification = Instantiate(this.config.notificationPrefab, this.menus.primary.notificationBin);
+        notification.transform.FindChild("Text").GetComponent<TextMeshProUGUI>().text = msg;
+        SetTimeout(timeToLive, () => Destroy(notification));
+    }
+
+    public LoadPlayer(): void {
+        this.menus.loadingScreen.SetActive(false);
+        this.menus.primary.root.gameObject.SetActive(true);
         this.CloseAllGUIs();
+    }
+
+    public startWarp(): void {
+        this.CloseAllGUIs();
+        this.menus.primary.root.gameObject.SetActive(false);
+        this.menus.world.root.gameObject.SetActive(false);
+        this.menus.loadingScreen.SetActive(true);
     }
 
     private connections: (() => void)[] = [];
@@ -135,6 +202,8 @@ export default class PlayerGUI extends AirshipSingleton {
 
     private ResetVisibility(): void {
         this.connections.forEach((conn) => conn());
+        this.menus.primary.screens.explore.root.gameObject.SetActive(false);
+        this.menus.primary.screens.report.root.gameObject.SetActive(false);
         this.menus.object.root.gameObject.SetActive(false);
         this.menus.world.root.gameObject.SetActive(false);
         this.menus.world.targetInfo.root.gameObject.SetActive(false);
@@ -148,6 +217,10 @@ export default class PlayerGUI extends AirshipSingleton {
         }
         this.viewports.forEach((obj) => Destroy(obj));
         this.viewports.clear();
+    }
+
+    public OpenPlayerList(): void {
+        this.ResetVisibility();
     }
 
     public CloseAllGUIs(): void {

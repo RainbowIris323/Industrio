@@ -4,9 +4,12 @@ import IslandManager from "../IslandManager";
 import GameManager from "Code/GameManager/GameManager";
 import { World } from "./World";
 import { MathUtil } from "@Easy/Core/Shared/Util/MathUtil";
-import { Game } from "@Easy/Core/Shared/Game";
 import { Placement } from "./Placement";
 import { Enum } from "Code/Enum";
+import WorldObjectComponent from "Code/Components/Items/WorldObject/WorldObject";
+import PlayerManager from "Code/PlayerManager/PlayerContainer";
+import { keys } from "@Easy/Core/Shared/Util/ObjectUtils";
+import { BlockDamageCategory } from "Code/Components/Items/Tools/MiningToolComponent";
 
 
 export class ServerWorld {   
@@ -21,6 +24,7 @@ export class ServerWorld {
     public ServerDeleteBlock(data: Placement.Data): void {
         this.shared.bin.RemoveObject(data);
         this.shared.events.Get("ServerBrokeBlock").Server.SendToAllPlayers(data.position);
+        if (data.worldObject.UseData) data.worldObject.OnBreak(data);
     }
 
     /**
@@ -33,9 +37,28 @@ export class ServerWorld {
         if (data) this.shared.events.Get("ServerBrokeBlock").Server.SendToAllPlayers(data.position);
     }
 
-    public LoadBlock(placementData: Placement.Data): void {
+    public LoadBlock(placementData: Placement.Data, data?: unknown): void {
         this.shared.events.Get("ServerPlacedBlock").Server.SendToAllPlayers(Placement.Data.sendNet(placementData));
         this.shared.bin.AddObject(placementData);
+        if (placementData.worldObject.UseData) placementData.worldObject.OnLoad(placementData, data);
+    }
+
+    public PlaceBlock(placementData: Placement.Data, player?: Player): void {
+        this.shared.events.Get("ServerPlacedBlock").Server.SendToAllPlayers(Placement.Data.sendNet(placementData));
+        this.shared.bin.AddObject(placementData);
+        if (placementData.worldObject.UseData) placementData.worldObject.OnPlace(placementData, player);
+    }
+
+    public SwapBlock(placementData: Placement.Data, object: WorldObjectComponent) {
+        const newPlacementData = new Placement.Data(object, { position: placementData.position, rotation: placementData.rotation });
+        const res = this.shared.bin.Verify(newPlacementData);
+        if (!res.success) {
+            for (let i = 0; i < res.collisions.size(); i++) {
+                if (this.shared.bin.GetObjectByCollisionAt(res.collisions[i])?.positionId !== placementData.positionId) return;
+            }
+        }
+        this.ServerDeleteBlock(placementData);
+        this.PlaceBlock(newPlacementData);
     }
 
     /**
@@ -46,48 +69,64 @@ export class ServerWorld {
         if (!IslandManager.Get().CheckPlayerAuthorization(player)) return;
         const toolName = player.character?.heldItem?.itemType;
         if (!toolName) return;
-        print(placementData.positionId);
         if (!this.shared.bin.Verify(placementData).success) return;
-        if (!ItemManager.Get().TryTakePlayerItem(player, toolName, 1)) return;
+        if (!ItemManager.Get().TryTakePlayerItem(player, placementData.worldObject, 1)) return;
         this.shared.events.Get("PlayerPlacedBlock").Server.SendToAllPlayers(player, Placement.Data.sendNet(placementData));
         this.shared.bin.AddObject(placementData);
+        if (placementData.worldObject.UseData) placementData.worldObject.OnPlace(placementData, player);
+        this.shared.CheckSides(placementData, player, true);
+    }
+
+    public BreakBlock(player: Player, data: Placement.Data): number {
+        data.worldObject.healthData[data.positionId] = undefined;
+        this.shared.bin.RemoveObject(data);
+        ItemManager.Get().GivePlayerBlockDrop(player, data.worldObject.name);
+        this.shared.events.Get("PlayerBrokeBlock").Server.SendToAllPlayers(player, data.position);
+        this.shared.CheckSides(data, player, false);
+        if (data.worldObject.UseData) data.worldObject.OnBreak(data);
+        return data.worldObject.healthData[data.positionId]!;
     }
 
     /**
      * Damages a block by a player.
      */
-    public DamageBlock(player: Player, data: Placement.Data, damage: number): number {
+    public DamageBlock(player: Player, data: Placement.Data, damage: number, tool: BlockDamageCategory): number {
         if (!(data.positionId in data.worldObject.healthData)) {
             data.worldObject.healthData[data.positionId] = data.worldObject.health;
         }
         data.worldObject.healthData[data.positionId]! -= damage;
 
-        this.shared.events.Get("PlayerHitBlock").Server.SendToAllPlayers(player, data.position, damage, data.worldObject.healthData[data.positionId]!);
+        this.shared.events.Get("PlayerHitBlock").Server.SendToAllPlayers(player, data.position, damage, data.worldObject.healthData[data.positionId]!, tool);
         if (data.worldObject.healthData[data.positionId]! > 0) return data.worldObject.healthData[data.positionId]!;
         data.worldObject.healthData[data.positionId] = undefined;
-        this.shared.bin.RemoveObject(data);
-        ItemManager.Get().GivePlayerBlockDrop(player, data.worldObject.name);
-        this.shared.events.Get("PlayerBrokeBlock").Server.SendToAllPlayers(player, data.position);
-        return data.worldObject.healthData[data.positionId]!;
+        return this.BreakBlock(player, data);
     }
 
     /**
      * Damages a block by a player using a tool.
      */
     public PlayerHitBlock(player: Player, position: Vector3): void {
-        if (!IslandManager.Get().CheckPlayerAuthorization(player)) return;
+        if (!IslandManager.Get().CheckPlayerAuthorization(player)) {
+            PlayerManager.Get().NotifyPlayer(player, `You are not authorized`);
+            return;
+        }
         position = MathUtil.RoundVec(position);
         const data = this.shared.bin.GetObjectByCollisionAt(position);
         if (!data) return;
-        if (!data.worldObject.breakable) return;
+        if (!data.worldObject.breakable) {
+            PlayerManager.Get().NotifyPlayer(player, `Object is indestructible`);
+            return;
+        }
         const toolName = player.character?.heldItem?.itemType;
         if (!toolName) return;
         const toolComponent = ItemManager.Get().TryGetItemComponent(toolName, Enum.ItemComponent.MiningTool);
         if (!toolComponent) return;
         const damageRatio = toolComponent.damageCategory === data.worldObject.damageCategory ? 1 : 0.25;
-        if (this.shared.SetTimeout('HitBlock', player, toolComponent.secondsPerHit)) return;
-        const blockHealth = this.DamageBlock(player, data, damageRatio * toolComponent.damagePerHit);
-        Game.BroadcastMessage(`${player.username} hit '${data.worldObject.name}' with '${toolName}' for ${damageRatio * toolComponent.damagePerHit} damage. ${blockHealth} health remaining.`);
+        if (this.shared.SetTimeout('HitBlock', player, toolComponent.secondsPerHit)) {
+            PlayerManager.Get().NotifyPlayer(player, `You are swinging too fast O.o`);
+            return;
+        }
+        this.DamageBlock(player, data, damageRatio * toolComponent.damagePerHit, toolComponent.damageCategory);
         return;
     }
 
@@ -100,7 +139,7 @@ export class ServerWorld {
             type: number,
             data: Placement.Data,
         } = {
-            quantity: 0,
+            quantity: 1,
             type: 0,
             data: undefined!,
         }
@@ -119,41 +158,54 @@ export class ServerWorld {
 
         const key = ItemManager.Get().GenerateBlockKey();
 
-        const time = this.shared.ExecPerBlock(GameManager.Get().config.maxIslandSize.div(2).mul(-1), GameManager.Get().config.maxIslandSize.div(2).mul(1), (data) => {
-            groupingData.quantity++;
+        const time = this.ExecPerBlock((data) => {
+            if (data.worldObject.UseData) {
+                data.worldObject.OnSave(data);
+            }
             blockCount++;
 
             if (groupingData.data) {
                 if (CheckCanGroup(data)) {
                     groupingData.data = data;
+                    groupingData.quantity++;
                     return
                 };
                 list.push(
-                    `${groupingData.type}:${groupingData.quantity}:${groupingData.data.position.x},${groupingData.data.position.y},${groupingData.data.position.z}:${groupingData.data.normal},${groupingData.data.rotation},${groupingData.data.height},${groupingData.data.quarter}`
+                    `${groupingData.type}:${groupingData.quantity}:${groupingData.data.position.x},${groupingData.data.position.y},${groupingData.data.position.z}:${groupingData.data.normal},${groupingData.data.rotation},${groupingData.data.height}`
                 );
             }
 
             const blockId = key.save[data.worldObject.name];
             groupingData.type = blockId;
-            groupingData.quantity = 0;
+            groupingData.quantity = 1;
             groupingData.data = data;
 
         });
 
         list.push(
-            `${groupingData.type}:${groupingData.quantity}:${groupingData.data.position.x},${groupingData.data.position.y},${groupingData.data.position.z}:${groupingData.data.normal},${groupingData.data.rotation},${groupingData.data.height},${groupingData.data.quarter}`
+            `${groupingData.type}:${groupingData.quantity}:${groupingData.data.position.x},${groupingData.data.position.y},${groupingData.data.position.z}:${groupingData.data.normal},${groupingData.data.rotation},${groupingData.data.height}`
         );
 
         const save = list.join(";");
 
-        print(`Finished generating world save with ${blockCount} blocks in ${time} seconds`);
+        PlayerManager.Get().NotifyAllPlayers(`Finished generating world save with ${blockCount} blocks in ${time} seconds`);
 
         return { blocks: save, blockSaves: "", key: key.load };
     }
 
+    public ExecPerBlock(func: (data: Placement.Data) => void) {
+        const objects = this.shared.bin.GetObjects();
+        const objs = keys(objects).filter((k) => objects[k] !== undefined).map(k => objects[k]!);
+        objs.sort((a, b) => {
+            if (a.position.x !== b.position.x) return a.position.x < b.position.x;
+            if (a.position.y !== b.position.y) return a.position.y < b.position.y;
+            return a.position.z < b.position.z;
+        }).forEach((obj) => func(obj));
+    }
+
     public LoadWorldFromSave(save: string, key: { [id: number]: string } ) {
 
-        this.shared.ExecPerBlock(GameManager.Get().config.maxIslandSize.div(2).mul(-1), GameManager.Get().config.maxIslandSize, (data) => {
+        this.ExecPerBlock((data) => {
             this.ServerDeleteBlock(data);
         });
 
@@ -165,13 +217,13 @@ export class ServerWorld {
             const name = key[id];
             const quantity = tonumber(list[1])!;
             const sPos = list[2].split(",");
-            const sRot = list[0].split(",");
+            const sRot = list[3].split(",");
             const pos = new Vector3(tonumber(sPos[0])!, tonumber(sPos[1])!, tonumber(sPos[2])!);
             const block = ItemManager.Get().TryGetItemComponentGroup(name, Enum.ItemComponentGroup.WorldObject);
             if (!block) return;
-            const data: Placement.Data = new Placement.Data(block, { position: pos, normal: tonumber(sRot[0])!, rotation: tonumber(sRot[1])!, quarter: tonumber(sRot[3])!, height: tonumber(sRot[2])! });
 
             for (let z = 0; z < quantity; z++) {
+                const data: Placement.Data = new Placement.Data(block, { position: pos.sub(new Vector3(0, 0, z)), normal: tonumber(sRot[0])!, rotation: tonumber(sRot[1])!, height: tonumber(sRot[2])! });
                 this.LoadBlock(data);
             }
         })
@@ -188,7 +240,6 @@ export class ServerWorld {
             return spawn.sub(new Vector3(0.5, -1, 0.5));
         }
         spawn = spawn.sub(new Vector3(0.5, -1, 0.5));
-        print(...hasNoBlocks);
         return spawn;
     }
 

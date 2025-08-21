@@ -103,7 +103,6 @@ export namespace Placement {
 
         private AddCollider(data: Data, vector: Vector3): void {
             vector = Data.TransformCollider(data, vector);
-            print(`Added: ${IdUtility.Vector3ToId(vector)} for ${data.worldObject.name}`);
             this.colliders[IdUtility.Vector3ToId(vector)] = data.positionId;
         }
 
@@ -183,7 +182,6 @@ export namespace Placement {
 
         private RemoveCollider(data: Data, vector: Vector3): void {
             vector = Data.TransformCollider(data, vector);
-            print(`Removed: ${IdUtility.Vector3ToId(vector)} for ${data.worldObject.name}`);
             this.colliders[IdUtility.Vector3ToId(vector)] = undefined;
         }
 

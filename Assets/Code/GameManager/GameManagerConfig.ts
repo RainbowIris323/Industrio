@@ -1,4 +1,9 @@
+import { Airship } from "@Easy/Core/Shared/Airship";
 import GameManager from "./GameManager";
+import { SaveCommand } from "./SaveWorldCommand";
+import { Game } from "@Easy/Core/Shared/Game";
+import StateContainer from "Code/StateContainer/StateContainer";
+import { SetTimeout } from "@Easy/Core/Shared/Util/Timer";
 
 @AirshipComponentMenu("Island/Core/GameConfig")
 export default class GameManagerConfig extends AirshipBehaviour {
@@ -14,9 +19,6 @@ export default class GameManagerConfig extends AirshipBehaviour {
     public maxIslandSize: Vector3 = new Vector3(600, 300, 600);
     public islandPositionOffset: Vector3 = new Vector3(0, 0, 0);
 
-    @Tooltip("The list that holds all voxel definition for each block type.")
-    public blockList: VoxelBlocks;
-
     @Tooltip("The number of blocks away the player can interact with")
     public playerInteractDistance: number = 8;
 
@@ -25,7 +27,6 @@ export default class GameManagerConfig extends AirshipBehaviour {
     public selectionRenderer: Renderer;
     public ghostRenderer: Renderer;
     public ghostUpdateFrequency: number;
-    public blockDefinitionWorld: WorldSaveFile;
     public airPlaceEnabled: boolean = true;
     public airPlaceRayYAngleOffset: number = -0.4;
     public toolAsset: GameObject;
@@ -39,5 +40,33 @@ export default class GameManagerConfig extends AirshipBehaviour {
 
     protected Start(): void {
         GameManager.Get().Init(this);
+
+        if (Game.IsServer()) Airship.Chat.RegisterCommand(new SaveCommand());
+
+        const state = StateContainer.Get().CreateState({
+            _id: "test-state",
+            _sync: "ServerToClient",
+            value1: 0,
+            value2: "moo"
+        });
+        state.Connect("value1", (newValue, oldValue) => {
+            print(`value1: ${oldValue} -> ${newValue}`);
+        });
+        state.Tick();
+        if (Game.IsServer()) {
+            state.Apply("value1", (v) => v + 1);
+            state.Apply("value1", (v) => v + 1);
+            state.Apply("value1", (v) => v + 1);
+            state.Apply("value1", (v) => v + 1);
+        }
+        state.Tick();
+        const tick = () => {
+            if (Game.IsServer()) {
+                state.Apply("value1", (v) => v + 1);
+            }
+            state.Tick();
+            SetTimeout(1, () => tick());
+        }
+        tick();
     }
 }

@@ -10,6 +10,7 @@ import { Asset } from "@Easy/Core/Shared/Asset";
 import { Game } from "@Easy/Core/Shared/Game";
 import CraftingRecipeComponent from "Code/Components/Systems/CraftingRecipeComponent";
 import { NetworkSignal } from "@Easy/Core/Shared/Network/NetworkSignal";
+import PlayerManager from "Code/PlayerManager/PlayerContainer";
 
 export default class ItemManager extends AirshipSingleton {
     private itemComponents: { [itemName: string]: ItemComponent } = {};
@@ -37,7 +38,6 @@ export default class ItemManager extends AirshipSingleton {
 
         if (Game.IsServer()) {
             this.playerCraft.server.OnClientEvent((player, recipeName, quantity) => {
-                print("fired!");
                 const recipe = CraftingRecipeComponent.recipes.find(a => recipeName === a.name);
                 if (!recipe) return;
                 this.Craft(player, quantity, recipe);
@@ -76,8 +76,6 @@ export default class ItemManager extends AirshipSingleton {
                 }
             }
         }
-
-        print(`Registered item: ${component.name}`);
     }
 
     public GetItemComponent<T extends Enum.ItemComponent>(name: string, itemType: T): ItemComponentConditional<T> {
@@ -123,17 +121,17 @@ export default class ItemManager extends AirshipSingleton {
         if (!this.GetItemsInGroup(Enum.ItemComponentGroup.WorldObject).includes(itemName)) return warn(`Could not give player drop for '${itemName}'`);
         const component = this.GetItemComponentGroup(itemName, Enum.ItemComponentGroup.WorldObject);
         if (component.overrideDrop) {
-            this.GivePlayerItem(player, component.overrideDrop.name, 1);
+            this.GivePlayerItem(player, component.overrideDrop, 1);
         }
         else {
-            if (component.dropsSelf) this.GivePlayerItem(player, itemName, 1);
+            if (component.dropsSelf) this.GivePlayerItem(player, component, 1);
         }
         component.dropTables.forEach((lootTable) => this.GivePlayerLootTable(player, lootTable));
     }
 
     public GivePlayerLootTable(player: Player, lootTable: LootTableComponent) {
         const quantity = this.rng.PickItemWeighted(lootTable.quantity, lootTable.weights);
-        this.GivePlayerItem(player, lootTable.item.name, quantity[0]);
+        this.GivePlayerItem(player, lootTable.item, quantity[0]);
     }
 
     public CanCraft(player: Player, recipe: CraftingRecipe): boolean {
@@ -160,10 +158,10 @@ export default class ItemManager extends AirshipSingleton {
             if (!player.character!.inventory.HasEnough(data.item.name, data.quantity * quantity)) success = false;
         });
         if (!success) return false;
-        const itemsTaken: [string, number][] = [];
+        const itemsTaken: [ItemComponent, number][] = [];
         recipe.inputs.forEach((data) => {
-            if (this.TryTakePlayerItem(player, data.item.name, data.quantity * quantity)) {
-                itemsTaken.push([data.item.name, data.quantity * quantity]);
+            if (this.TryTakePlayerItem(player, data.item, data.quantity * quantity)) {
+                itemsTaken.push([data.item, data.quantity * quantity]);
             } else {
                 success = false;
             }
@@ -175,9 +173,9 @@ export default class ItemManager extends AirshipSingleton {
             return false;
         }
         
-        recipe.outputs.forEach((data) => this.GivePlayerItem(player, data.item.name, data.quantity * quantity));
+        recipe.outputs.forEach((data) => this.GivePlayerItem(player, data.item, data.quantity * quantity));
 
-        recipe.chanceOutputs.forEach((data) => this.GivePlayerItem(player, data.item.name, this.rng.Int(data.minimum * quantity, data.maximum * quantity)));
+        recipe.chanceOutputs.forEach((data) => this.GivePlayerItem(player, data.item, this.rng.Int(data.minimum * quantity, data.maximum * quantity)));
 
         return true;
     }
@@ -193,9 +191,10 @@ export default class ItemManager extends AirshipSingleton {
      * 
      * @returns Items taken?
      */
-    public TryTakePlayerItem(player: Player, itemName: string, quantity: number): boolean {
-        if (!player.character?.inventory.HasEnough(itemName, quantity)) return false;
-        player.character.inventory.Decrement(itemName.split(" ").join("-"), quantity);
+    public TryTakePlayerItem(player: Player, item: ItemComponent, quantity: number): boolean {
+        PlayerManager.Get().NotifyPlayer(player, `-${quantity} ${item.displayName}`);
+        if (!player.character?.inventory.HasEnough(item.name, quantity)) return false;
+        player.character.inventory.Decrement(item.name, quantity);
         return true;
     }
 
@@ -208,8 +207,9 @@ export default class ItemManager extends AirshipSingleton {
      * 
      * @param quantity The quantity of items to give.
      */
-    public GivePlayerItem(player: Player, item: string, quantity: number): void {
-        player.character!.inventory.AddItem(new ItemStack(item.split(" ").join("-"), quantity));
+    public GivePlayerItem(player: Player, item: ItemComponent, quantity: number): void {
+        PlayerManager.Get().NotifyPlayer(player, `+${quantity} ${item.displayName}`);
+        player.character!.inventory.AddItem(new ItemStack(item.name, quantity));
     }
 
     public GenerateBlockKey(): { load: { [id: number]: string }, save: { [name: string]: number }} {
